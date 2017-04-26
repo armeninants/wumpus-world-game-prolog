@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>ww_hybrid_agent.pl -- Wumpus World Agent in Prolog</title>
+
+<link rel="stylesheet" type="text/css" href="../pldoc.css">
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+
+</head>
+<body>
+
+
+<h1 class="file"><span style="float:right"></span>ww_hybrid_agent.pl -- Wumpus World Agent in Prolog</h1>
+
+<p>
+A Prolog implementation of the hybrid agent for the Wumpus World game.
+The high-level algorithm can be found in the AIMA textbook, Figure 7.20.</p>
+
+<dl class="tags">
+<dt class="keyword-author">author</dt><dd class="keyword-author">- Armen Inants &lt;armen@inants.com&gt;</dd>
+<dt class="keyword-license">license</dt><dd class="keyword-license">- GPL</dd>
+</dl>
+
+<dl>
+<dt class="pubdef"><span style="float:right"></span><a name="init_agent/1"><b class="pred">init_agent</b><var class="arglist">(+Settings:list)</var></a> is <b class="det">det</b></dt><dd class="defbody">Initialize the agent.
+
+<p>
+<var>Settings</var> = [Size, PitProbability, InitialCell, InitOrientation]</p></dd>
+<dt class="pubdef"><span style="float:right"></span><a name="restart_agent/0"><b class="pred">restart_agent</b></a> is <b class="det">det</b></dt><dd class="defbody">Restart the agent.</dd>
+<dt class="pubdef"><span style="float:right"></span><a name="run_agent/2"><b class="pred">run_agent</b><var class="arglist">(+Percept, -Action)</var></a> is <b class="det">det</b></dt><dd class="defbody">Take a <var>Percept</var> and output an <var>Action</var>.</dd>
+<dt class="pubdef"><span style="float:right"></span><a name="tell_action/1"><b class="pred">tell_action</b><var class="arglist">(+Action:atom)</var></a> is <b class="det">det</b></dt><dd class="defbody">Add the fact of <var>Action</var> execution to persistence.</dd>
+</dl>
+
+</body>
+</html>

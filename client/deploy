@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+ssh armeninants@semanticweb.rocks "source ~/.bash_profile && cd /var/www/wumpus-world.com && git fetch origin master && git reset --hard origin/master && ./deploy-build && ./run"
+
+# ssh armeninants@themallcloud "cd /var/www/wumpus-world.com && git fetch origin master && git reset --hard origin/master && npm install && npm run build"
+
+# npm run build
+# rm -f dist.zip
+# zip -r dist.zip dist
+# cat dist.zip | ssh armeninants@middleton "cat > /var/www/dist.zip"
+# ssh armeninants@middleton "cd /var/www && rm -rf dist && unzip dist.zip && rm -rf wumpus-world.com && mv dist wumpus-world.com"
