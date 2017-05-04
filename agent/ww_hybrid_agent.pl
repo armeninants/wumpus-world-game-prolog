@@ -138,8 +138,8 @@ tell_action(Action) :-
 %  @tbd Sometimes wummpus_location succeeds, but have_arrow does not.
 
 make_plan(_,_,_,_,_,_,Plan) :-
-	\+ plan([]),
 	plan(Plan),
+	Plan \== [],
 	!.
 make_plan(T, StartCell, Current, Angle, SafeCells, _, Plan) :-
 	glitter(yes, T),
@@ -156,11 +156,10 @@ make_plan(T, _, Current, Angle, SafeCells, _, Plan) :-
 make_plan(_, _, Current, Angle, SafeCells, UnvisitedCells, Plan) :-
 	intersection(UnvisitedCells, SafeCells, SafeUnvis),
 	SafeUnvis \== [],
-	write('Heading to an unvisited safe cell '),
 	plan_route(Current, Angle, SafeUnvis, SafeCells, Path, Plan),
 	!,
 	last(Path, Cell1), 
-	writeln(Cell1).
+	format('Heading to an unvisited safe cell ~w~n', [Cell1]).
 make_plan(T, _, Current, Angle, SafeCells, _, Plan) :-
 	have_arrow(T),
 	stench(yes, _),
@@ -175,9 +174,8 @@ make_plan(_, _, Current, Angle, SafeCells, UnvisitedCells, Plan) :-
 	plan_route(Current, Angle, UnvisNotUnsafe, SafeCells, Path, Plan),
 	Plan \== [],
 	!,
-	write('Heading to '),
 	last(Path, Cell), 
-	writeln(Cell).
+	format('Heading to ~w~n', [Cell]).
 make_plan(_, StartCell, Current, Angle, SafeCells, _, Plan) :-
 	writeln('I am desperate, exiting the cave'),
 	plan_route(Current, Angle, [StartCell], SafeCells, _, Plan0),
@@ -452,8 +450,7 @@ wumpus_location(Cell) :-
 		wumpus_free(Cell3)
 	),
 	!,
-	write('Wumpus is located at '),
-	writeln(Cell),
+	format('Wumpus is located at ~w~n', [Cell]),
 	assertz( wumpus_location_inf(Cell) ).
 wumpus_location([X,Y]) :- 
 	adjacent([X,Y], [X,Y1]),
@@ -464,8 +461,7 @@ wumpus_location([X,Y]) :-
 	stench(yes, T2),
 	wumpus_free([X1,Y1]),
 	!,
-	write('Wumpus is located at '),
-	writeln([X,Y]),
+	format('Wumpus is located at [~w,~w]~n', [X,Y]),
 	assertz( wumpus_location_inf([X,Y]) ).
 
 %! possible_wumpus(-Cells:list) is det.
