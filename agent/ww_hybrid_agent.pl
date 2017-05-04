@@ -308,6 +308,8 @@ unvisited_cells(UnvisitedCells) :-
 %    * the cell has been visited
 %    * it has an adjacent which is not breezy
 %    * wumpus is located there
+%
+%  @tbd Handle the case when the wumpus has been killed and you could infer the possible location of wumpus.
 
 pit_free(Cell) :- pit_free_inf(Cell), ! .
 % pit_free(Cell) :- pit_inf(Cell), !, fail .
@@ -430,6 +432,8 @@ wumpus_free(Cell) :-
 %      and all other adjacent cells are known to be wumpus-free.
 %    * it has two different adjacent smelly cells, and the symmetric cell is wumpus-free
 
+wumpus_location(_) :-
+	wumpus_dead, !, fail.
 wumpus_location(Cell) :-
 	wumpus_location_inf(Cell1),
 	!,
@@ -437,7 +441,7 @@ wumpus_location(Cell) :-
 	->	true
 	;	fail
 	).
-wumpus_location(Cell) :- 
+wumpus_location(Cell) :-
 	adjacent(Cell, Cell2),
 	visited(Cell2, T),
 	stench(yes, T),
