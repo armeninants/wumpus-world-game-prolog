@@ -16,7 +16,7 @@ The high-level algorithm can be found in the AIMA textbook, Figure 7.20.
 @license GPL
 */
 
-:- ensure_loaded('astar/astar.pl'). % A* search implementation
+:- ensure_loaded('astar/astar.pl'). % A-star search implementation
 
 :- dynamic([
 	size/1,
@@ -103,63 +103,16 @@ restart_agent :-
 %
 %  Take a Percept and output an Action.
 
- run_agent(Percept, Action) :-
+run_agent(Percept, Action) :-
 	game_time(T),
 	init_location(StartCell),
 	agent_location(Current, T),
 	agent_orientation(Angle, T),
 	make_percept_statement(Percept, T),
 	safe_cells(SafeCells),
-	(	glitter(yes, T)
-	->	writeln('Gold! Lets get out of here'),
-		plan_route(Current, Angle, [StartCell], SafeCells, _, NewPlan0),
-		append([[grab], NewPlan0, [climb]], NewPlan1),
-		retractall(plan(_)),
-		assertz(plan(NewPlan1))
-	;	true
-	),
-	plan(Plan0),
 	unvisited_cells(UnvisitedCells),
-	intersection(UnvisitedCells, SafeCells, SafeUnvis),
-	(	Plan0 == [],
-		SafeUnvis \== []
-	->	write('Heading to an unvisited safe cell '),
-		plan_route(Current, Angle, SafeUnvis, SafeCells, Path1, NewPlan2),
-		last(Path1, Cell1),
-		writeln(Cell1),
-		retractall(plan(_)),
-		assertz(plan(NewPlan2))
-	;	true
-	),
-	plan(Plan1),
-	(	Plan1 == [],
-		have_arrow(T)
-	->	writeln('Trying to kill the wumpus'),
-		possible_wumpus(WCells),
-		plan_shot(Current, Angle, WCells, SafeCells, NewPlan3),
-		retractall(plan(_)),
-		assertz(plan(NewPlan3))
-	;	true
-	),
-	plan(Plan2),
-	(	Plan2 == []
-	->	writeln('No choice but to take a chance'),
-		not_unsafe(NotUnsafe),
-		intersection(UnvisitedCells, NotUnsafe, UnvisNotUnsafe),
-		plan_route(Current, Angle, UnvisNotUnsafe, SafeCells, _, NewPlan4),
-		retractall(plan(_)),
-		assertz(plan(NewPlan4))
-	;	true
-	),
-	plan(Plan3),
-	(	Plan3 == []
-	->	writeln('I am desperate, exiting the cave'),
-		plan_route(Current, Angle, [StartCell], SafeCells, _, NewPlan5),
-		retractall(plan(_)),
-		assertz(plan(NewPlan5))
-	;	true
-	),
-	retract(plan([Action|PlanRest])),
+	make_plan(T, StartCell, Current, Angle, SafeCells, UnvisitedCells, [Action|PlanRest]),
+	retractall(plan(_)),
 	assertz(plan(PlanRest)),
 	tell_action(Action).
 
@@ -175,6 +128,59 @@ tell_action(Action) :-
 	assertz(game_time(TN)).
 
 %==============================================
+
+%! make_plan(+T, +StartCell, +Current, +Angle, +SafeCells, +UnvisitedCells, -Plan) is det.
+%
+%  Return a Plan of actions.
+%
+%  This predicate implements the logic of decision making.
+
+make_plan(_,_,_,_,_,_,Plan) :-
+	\+ plan([]),
+	plan(Plan),
+	!.
+make_plan(T, StartCell, Current, Angle, SafeCells, _, Plan) :-
+	glitter(yes, T),
+	writeln('Gold! Lets get out of here'),
+	plan_route(Current, Angle, [StartCell], SafeCells, _, Plan0),
+	append([[grab], Plan0, [climb]], Plan), 
+	!.
+make_plan(T, _, Current, Angle, SafeCells, _, Plan) :-
+	wumpus_location(Cell),
+	have_arrow(T),
+	!,
+	writeln('Going to kill the wumpus!'),
+	plan_shot(Current, Angle, [Cell], SafeCells, Plan).
+make_plan(_, _, Current, Angle, SafeCells, UnvisitedCells, Plan) :-
+	intersection(UnvisitedCells, SafeCells, SafeUnvis),
+	SafeUnvis \== [],
+	write('Heading to an unvisited safe cell '),
+	plan_route(Current, Angle, SafeUnvis, SafeCells, Path, Plan),
+	!,
+	last(Path, Cell1), 
+	writeln(Cell1).
+make_plan(T, _, Current, Angle, SafeCells, _, Plan) :-
+	have_arrow(T),
+	stench(yes, _),
+	writeln('Trying to kill the wumpus'),
+	possible_wumpus(WCells),
+	plan_shot(Current, Angle, WCells, SafeCells, Plan),
+	!.
+make_plan(_, _, Current, Angle, SafeCells, UnvisitedCells, Plan) :-
+	writeln('No choice but to take a chance'),
+	not_unsafe(NotUnsafe),
+	intersection(UnvisitedCells, NotUnsafe, UnvisNotUnsafe),
+	plan_route(Current, Angle, UnvisNotUnsafe, SafeCells, Path, Plan),
+	Plan \== [],
+	!,
+	write('Heading to '),
+	last(Path, Cell), 
+	writeln(Cell).
+make_plan(_, StartCell, Current, Angle, SafeCells, _, Plan) :-
+	writeln('I am desperate, exiting the cave'),
+	plan_route(Current, Angle, [StartCell], SafeCells, _, Plan0),
+	append(Plan0, [climb], Plan),
+	!.
 
 %! make_percept_statement(+Percept:list, +T:int) is det.
 %
@@ -279,7 +285,6 @@ visited(Current, T) :-
 		VisitedCells
 	).
 	
-
 %! unvisited_cells(-UnvisitedCells:list) is det.
 %
 %  Return the list of all unvisited cells by the current time.
@@ -293,7 +298,7 @@ unvisited_cells(UnvisitedCells) :-
 		UnvisitedCells
 	).
 
-%! pit_free(?Cell:list) is semidet.
+%! pit_free(+Cell:list) is semidet.
 %
 %  Succeeds if Cell is known to be pit-free.
 %
@@ -302,16 +307,23 @@ unvisited_cells(UnvisitedCells) :-
 %    * this has been inferred already
 %    * the cell has been visited
 %    * it has an adjacent which is not breezy
+%    * wumpus is located there
 
 pit_free(Cell) :- pit_free_inf(Cell), ! .
+% pit_free(Cell) :- pit_inf(Cell), !, fail .
 pit_free(Cell) :- visited(Cell, _), ! .
 pit_free(Cell) :-
 	adjacent(Cell, Cell2),
 	visited(Cell2, T),
 	breeze(no, T), !,
 	assertz( pit_free_inf(Cell) ).
+pit_free(Cell) :-
+	wumpus_location(Cell), !,
+	assertz( pit_free_inf(Cell) ).
 
-%! pit(?Cell:list) is semidet.
+
+
+%! pit(+Cell:list) is semidet.
 %
 %  Succeeds if Cell is known to have a pit.
 %  
@@ -322,6 +334,7 @@ pit_free(Cell) :-
 %      and all other adjacent cells are known to be pit-free.
 
 pit(Cell) :- pit_inf(Cell), ! .
+%% pit(Cell) :- pit_free_inf(Cell), !, fail .
 pit(Cell) :- 
 	% \+ visited(Cell, _),
 	adjacent(Cell, Cell2),
@@ -380,12 +393,19 @@ wumpus_dead :-
 %    * the wumpus is dead
 %    * this has been inferred already
 %    * it has been visited
+%    * there is a smelly cell which is not adjacent
 %    * its adjacent cell is not smelly
 %    * agent shot without killing wumpus in the direction of Cell
 
 wumpus_free(_) :- wumpus_dead, ! .
 wumpus_free(Cell) :- wumpus_free_inf(Cell), ! .
 wumpus_free(Cell) :- visited(Cell, _), ! .
+wumpus_free(Cell) :-
+	stench(yes, T),
+	agent_location(Cell1, T),
+	\+ adjacent(Cell, Cell1), 
+	!,
+	assertz( wumpus_free_inf(Cell) ).
 wumpus_free(Cell) :-
 	adjacent(Cell, Cell2),
 	visited(Cell2, T),
@@ -408,10 +428,16 @@ wumpus_free(Cell) :-
 %    * this has been inferred already
 %    * its adjacent cell is smelly
 %      and all other adjacent cells are known to be wumpus-free.
+%    * it has two different adjacent smelly cells, and the symmetric cell is wumpus-free
 
-wumpus_location(Cell) :- wumpus_location_inf(Cell), ! .
+wumpus_location(Cell) :-
+	wumpus_location_inf(Cell1),
+	!,
+	(	Cell == Cell1
+	->	true
+	;	fail
+	).
 wumpus_location(Cell) :- 
-	\+ wumpus_dead,
 	adjacent(Cell, Cell2),
 	visited(Cell2, T),
 	stench(yes, T),
@@ -422,14 +448,29 @@ wumpus_location(Cell) :-
 		wumpus_free(Cell3)
 	),
 	!,
+	write('Wumpus is located at '),
+	writeln(Cell),
 	assertz( wumpus_location_inf(Cell) ).
+wumpus_location([X,Y]) :- 
+	adjacent([X,Y], [X,Y1]),
+	visited([X,Y1], T1),
+	stench(yes, T1),
+	adjacent([X,Y], [X1,Y]),
+	visited([X1,Y], T2),	
+	stench(yes, T2),
+	wumpus_free([X1,Y1]),
+	!,
+	write('Wumpus is located at '),
+	writeln([X,Y]),
+	assertz( wumpus_location_inf([X,Y]) ).
 
 %! possible_wumpus(-Cells:list) is det.
 %
 %  Return the list of possible wumpus locations.
 %  
-%  The list contains one cell if wumpus location can be determined.
-%  Otherwise return the list of cells which are not wumpus-free.
+%  The list consists of:
+%    * one cell, if wumpus location can be determined, otherwise
+%    * all cells which are not wumpus-free
 
 possible_wumpus([Cell]) :-
 	wumpus_location(Cell), !.
@@ -552,7 +593,6 @@ plan_rotation(Angle1, Angle2, [turnLeft]) :-
 plan_rotation(Angle1, Angle2, [turnRight]) :-
 	Angle1 > Angle2, !.
 
-
 %! grid_of(+Cells:list, -Grid:lest) is det.
 %
 %  Return the Grid consisting of all cells which are on the same 
@@ -596,4 +636,3 @@ plan_shot(Current, Angle, PossibleTargets, Allowed, Plan) :-
 	rotation_angle(ShootFrom, Target, Angle1),
 	plan_rotation(Angle0, Angle1, ActionsTurn),
 	append([Plan0, ActionsTurn, [shoot]], Plan), !.
-
