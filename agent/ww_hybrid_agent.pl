@@ -134,6 +134,8 @@ tell_action(Action) :-
 %  Return a Plan of actions.
 %
 %  This predicate implements the logic of decision making.
+%
+%  @tbd Sometimes wummpus_location succeeds, but have_arrow does not.
 
 make_plan(_,_,_,_,_,_,Plan) :-
 	\+ plan([]),
@@ -365,15 +367,13 @@ rotation_angle([X1, Y1], [X2, Y2], Angle) :-
 %  Succeeds if the agent has an arrow at time T.
 %  
 %  True if the agent has not shot by the time T.
-%
-%  @tbd put cut after action(shoot, TP)
 
 have_arrow(0) :- !.
 have_arrow(T) :- 
-	\+ (
-		action(shoot, TP),
-		TP < T
-	).
+	action(shoot, TF),
+	!,
+	T =< TF.
+have_arrow(_).
 
 %! wumpus_dead(+T:int) is semidet.
 %
