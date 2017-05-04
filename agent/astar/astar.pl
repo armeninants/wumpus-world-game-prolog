@@ -81,14 +81,14 @@ astarRecursive([ [_, FinalState | Path ] | _], _, _, GoalTest, _, Answer, _) :-
 	%%found goal
 	callGoalFn(GoalTest,FinalState), !,  % cut is to abort this clause if not at goal state
 	reverse([FinalState | Path], Answer).
-	%% N is NumExpanded + 1,
-	%% writeln(['Search Successful, states expanded =', N]).
+	% N is NumExpanded + 1,
+	% writeln(['Search Successful, states expanded =', N]).
 
 astarRecursive([ [(Gval,_), FinalState | Path ]| OtherPaths],
 	       Successors, StateEqFn, GoalTest, HvalFn, Answer, NumExpanded) :-
 	%% Expand and search.
-	%%writeln(['Expanding: ',  [FinalState|Path]]),
-	%%nl,
+	% writeln(['Expanding: ',  [FinalState|Path]]),
+	% nl,
 	callSuccessors(Successors,FinalState,Neighbours),
 	expand_astar(Gval, FinalState, Path, Neighbours,  StateEqFn, HvalFn, NewPaths),
 	ourmerge(NewPaths, OtherPaths, NewFrontier),

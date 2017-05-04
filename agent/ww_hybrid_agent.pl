@@ -334,7 +334,7 @@ pit_free(Cell) :-
 %      and all other adjacent cells are known to be pit-free.
 
 pit(Cell) :- pit_inf(Cell), ! .
-%% pit(Cell) :- pit_free_inf(Cell), !, fail .
+% pit(Cell) :- pit_free_inf(Cell), !, fail .
 pit(Cell) :- 
 	% \+ visited(Cell, _),
 	adjacent(Cell, Cell2),

@@ -4,12 +4,13 @@
 % :- doc_server(4000).
 % :- portray_text(true).
 
-:- [
-	server,
-	'agent/ww_hybrid_agent'
+:-	[
+		server,
+		'agent/ww_hybrid_agent'
 	].
 
-:- doc_save(., [
-		doc_root(doc),
-		recursive(true)
-	]).
+:-	doc_save(., [
+			doc_root(doc),
+			recursive(true)
+		]),
+	halt.
